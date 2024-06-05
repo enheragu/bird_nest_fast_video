@@ -69,11 +69,12 @@ class ThreadVideoWriter(ThreadVideoBase):
         self.Q.put(frame)
 
 class ThreadVideoCapture(ThreadVideoBase):
-    def __init__(self, path, queueSize=100):
+    def __init__(self, path, frameSkip = 1, queueSize=120):
         super().__init__(path, queueSize)
         # initialize the file video stream along with the boolean
         # used to indicate if the thread should be stopped or not
         self.stream = cv2.VideoCapture(path)
+        self.frameSkip = frameSkip
 
         if not self.stream.isOpened():
             log(f"Error opening video {path}")
@@ -81,26 +82,37 @@ class ThreadVideoCapture(ThreadVideoBase):
 
     def update(self):
         # keep looping infinitely
-        while True:
-            # if the thread indicator variable is set, stop the
-            # thread
+        total_frames = int(self.stream.get(cv2.CAP_PROP_FRAME_COUNT))
+        
+        for frame_index in range(0, total_frames, self.frameSkip):
+            self.stream.set(cv2.CAP_PROP_FRAME_COUNT, frame_index)
+
+            # if the thread indicator variable is set, stop the thread
             if self.isStopped():
                 return
             
-            # otherwise, ensure the queue has room in it
-            if not self.Q.full():
-                # read the next frame from the file
-                (grabbed, frame) = self.stream.read()
-                # if the `grabbed` boolean is `False`, then we have
-                # reached the end of the video file
-                if not grabbed:
-                    self.stop()
-                    return
-                # add the frame to the queue
-                self.Q.put(frame)
-                            
+            # ensure the queue has room in it
+            while self.Q.full():
+                time.sleep(0.5)
+
+            # read the next frame from the file
+            (grabbed, frame) = self.stream.read()
+            # if the `grabbed` boolean is `False`, then we have
+            # reached the end of the video file
+            if not grabbed:
+                self.stop()
+                return
+            # add the frame to the queue
+            self.Q.put(frame)
+
+        self.stop()
+
     def read(self):
         # return next frame in the queue
         while self.Q.empty() and not self.isStopped():
             time.sleep(0.5)
-        return self.Q.get()
+
+        if self.Q.empty() and self.isStopped():
+            return None
+        else:
+            return self.Q.get()

@@ -39,7 +39,7 @@ def find_videos(directory, extension, max_workers):
     return video_files
 
 
-def handleVideoSearch(videofiles_cache_yaml, input_video_path, input_video_extension):
+def handleVideoSearch(videofiles_cache_yaml, input_video_path, input_video_extension, max_workers):
     logCoolMessage('Search for all video files')
     video_files = []
     if os.path.exists(videofiles_cache_yaml):
@@ -47,7 +47,7 @@ def handleVideoSearch(videofiles_cache_yaml, input_video_path, input_video_exten
         video_files = parseYaml(videofiles_cache_yaml)
     else:
         log(f"Search video files in  {input_video_path}.")
-        video_files = find_videos(input_video_path, input_video_extension)
+        video_files = find_videos(input_video_path, input_video_extension, max_workers)
         dumpYaml(videofiles_cache_yaml, video_files, 'w')
     log(f"A total of {len(video_files)} video files found.", bcolors.OKCYAN)
 
