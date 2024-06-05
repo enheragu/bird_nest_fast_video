@@ -98,11 +98,11 @@ def handleFrames(timestamp_dict, frames_cache_yaml, new_fps, acceleration_factor
 
             if not in_interval:
                 # log(f"[{frame_count}] not in_interval")
-                if frame_count_general % int(acceleration_factor_fast*new_fps/fps) == 0:
+                if frame_count_general % int(acceleration_factor_fast*fps/new_fps) == 0:
                     frames.append(['f', frame_count])
 
             elif in_interval:
-                if frame_count_general % int(acceleration_factor_slow*new_fps/fps) == 0:
+                if frame_count_general % int(acceleration_factor_slow*fps/new_fps) == 0:
                     frames.append(['s', frame_count])   
             
             frame_count_general+=1

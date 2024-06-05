@@ -51,9 +51,10 @@ debug_mask = False
 
 
 # Options to configure output
-frame_skip=10
-acceleration_factor_slow=70
-acceleration_factor_fast=3000
+frame_skip=8
+acceleration_factor_slow=140
+acceleration_factor_fast=4000
+timelapse_acceleration_factor=12000
 before_seconds=1
 after_seconds=1
 
@@ -69,11 +70,12 @@ concatenate = True
 videofiles_cache_yaml = './cache/videofiles.chache.yaml' # File with all the videos that are to be included
 timestamps_cache_yaml = './cache/timestams.chache.yaml'  # Timestamp info about videos to be accelerated
 frames_cache_yaml = './cache/frames.chache.yaml'         # Specific frames to take once accelerated
+frames_timelapse_cache_yaml = './cache/frames_timelapse.chache.yaml'         # Specific frames to take once accelerated in timelapse
 ffmpeg_cache_file = './cache/ffmpeg_video_list.txt'      # Videos to be concatenated by ffmpeg
 failed_ffmpg_videos = './cache/error_videos.cache.yaml'  # Video list that is not correct and is excluded from ffmpeg concatenation
 
 # Output FPS
-new_fps = 20
+new_fps = 50
 
 
 
@@ -90,10 +92,13 @@ if __name__ == "__main__":
         cv2.namedWindow("original_video", cv2.WINDOW_NORMAL) 
         cv2.resizeWindow('original_video', 900,700)
 
+        max_workers=1
+        max_workers_accelerate=1
+
 
     ## CHECK FOR ALL VIDEO FILES AND GETS PATHS
     if video_search:
-        video_files = handleVideoSearch(videofiles_cache_yaml, input_video_path, input_video_extension)
+        video_files = handleVideoSearch(videofiles_cache_yaml, input_video_path, input_video_extension, max_workers)
     
     ## CHECKS ALL VIDEOS AND GETS TIMESTAMPS WITH MOVEMENT
     if timestamp_search:
@@ -104,10 +109,13 @@ if __name__ == "__main__":
         logCoolMessage('Video acceleration')
         timestamp_dict = handleIntervals(timestamp_dict, max_workers, timestamps_cache_yaml, before_seconds, after_seconds)
         frames_dict = handleFrames(timestamp_dict, frames_cache_yaml, new_fps, acceleration_factor_slow, acceleration_factor_fast)
-
-        output_video_name = f'{output_video_path}/slow{acceleration_factor_slow}_fast{acceleration_factor_fast}_complete_video.mp4'
+        
+        output_video_name = f'{output_video_path}/slow_x{acceleration_factor_slow}_fast_x{acceleration_factor_fast}_complete_video.mp4'
         handleAcceleration(frames_dict, output_video_name, new_fps, acceleration_factor_fast, acceleration_factor_slow)
 
+        output_video_name = f'{output_video_path}/fast_x{timelapse_acceleration_factor}_timelapse.mp4'
+        frames_dict_timelapse = handleFrames(timestamp_dict, frames_timelapse_cache_yaml, new_fps, timelapse_acceleration_factor, timelapse_acceleration_factor)
+        handleAcceleration(frames_dict_timelapse, output_video_name, new_fps, timelapse_acceleration_factor, timelapse_acceleration_factor, include_slow = False)
 
     # ## CONCATENATE ALL RESULTING VIDEOS
     # if concatenate:
