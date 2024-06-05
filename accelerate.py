@@ -77,12 +77,12 @@ from utils.yaml_utils import parseYaml, dumpYaml
             
 #         if not in_interval:
 #             # log(f"[{frame_count}] not in_interval")
-#             if frame_count % int(acceleration_factor_fast*new_fps/fps) == 0:
+#             if frame_count % int(acceleration_factor_fast*fps/new_fps) == 0:
 #                 cv2.putText(frame, f'>>x{acceleration_factor_fast}', (x, y), font, scale, (0,0,255), thickness)
 #                 out.write(frame)
 
 #         elif in_interval:
-#             if frame_count % int(acceleration_factor_slow*new_fps/fps) == 0:
+#             if frame_count % int(acceleration_factor_slow*fps/new_fps) == 0:
 #                 cv2.putText(frame, f'>>x{acceleration_factor_slow}', (x, y), font, scale, (0,255,0), thickness)
 #                 out.write(frame)
     
@@ -93,15 +93,13 @@ from utils.yaml_utils import parseYaml, dumpYaml
 #     log(f"  Finished {output_video_path}, took {str(timedelta(seconds=time.time()-start))} (h:min:sec.mil).")
 
 
-def handleAcceleration(frames_dict, output_video_name, new_fps, acceleration_factor_fast, acceleration_factor_slow):
+def handleAcceleration(frames_dict, output_video_name, new_fps, acceleration_factor_fast, acceleration_factor_slow, include_fast = True, include_slow = True):
     start = time.time()
-
 
     cap = cv2.VideoCapture(list(frames_dict.keys())[0])
     frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     cap.release()
-
 
     font = cv2.FONT_HERSHEY_SIMPLEX
     scale = 1
@@ -115,8 +113,8 @@ def handleAcceleration(frames_dict, output_video_name, new_fps, acceleration_fac
     out = ThreadVideoWriter(output_video_name, cv2.VideoWriter_fourcc(*'mp4v'), new_fps, (frame_width, frame_height))
     out.start()
     for video, frames in frames_dict.items():
-        if '17d' not in video and '18d' not in video and '19d' not in video:
-            continue
+        # if '17d' not in video and '18d' not in video and '19d' not in video:
+        #     continue
         
         cap = cv2.VideoCapture(video)
         for frame_index in frames:
@@ -125,9 +123,9 @@ def handleAcceleration(frames_dict, output_video_name, new_fps, acceleration_fac
             if not ret:
                 log(f"Problem reading frame from {video}", bcolors.ERROR)
             
-            if frame_index[0] == 'f':
+            if include_fast and frame_index[0] == 'f':
                 cv2.putText(frame, f'>>x{acceleration_factor_fast}', (x, y), font, scale, (0,0,255), thickness)
-            elif frame_index[0] == 's':
+            elif include_slow and frame_index[0] == 's':
                 cv2.putText(frame, f'>>x{acceleration_factor_slow}', (x, y), font, scale, (0,255,0), thickness)
 
             out.write(frame)
